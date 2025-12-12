@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot SQL Generator</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --surface: #ffffff;
+            --bg: #f8f9fa;
+            --border: #e0e0e0;
+            --text: #202124;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0 0 24px 0;
+            font-size: 24px;
+        }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #666;
+            margin: 16px 0 8px 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .checkbox-group input {
+            margin: 0;
+        }
+
+        .sticky-sidebar {
+            position: sticky;
+            top: 20px;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea#sql-output {
+            flex: 1;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            resize: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .help-text {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- FORM SECTION -->
+        <div class="main-content">
+            <div class="card">
+                <h1>🤖 Bot Configuration Generator</h1>
+                <p>Fill out the details below to generate the SQL code for your new customer bot.</p>
+            </div>
+
+            <form id="botForm" onchange="generateSQL()">
+
+                <!-- IDENTITY -->
+                <div class="card">
+                    <h2>Identity & Webhook</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Bot ID (Unique URL Slug)</label>
+                            <input type="text" id="bot_id" placeholder="e.g. realestate-bot-01" required>
+                            <div class="help-text">Used in URL: ?botId=...</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bot Name</label>
+                            <input type="text" id="name" value="Support Assistant">
+                        </div>
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" id="company_name" value="My Company">
+                        </div>
+                        <div class="form-group">
+                            <label>n8n Webhook URL</label>
+                            <input type="url" id="webhook_url" placeholder="https://..." required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BRANDING -->
+                <div class="card">
+                    <h2>Branding & Assets</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Logo URL</label>
+                            <input type="url" id="logo_url" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label>Favicon URL</label>
+                            <input type="url" id="favicon_url" placeholder="https://...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLORS -->
+                <div class="card">
+                    <h2>Color Theme</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Primary Color</label>
+                            <input type="color" id="primary_color" value="#1a73e8">
+                        </div>
+                        <div class="form-group">
+                            <label>Secondary Color</label>
+                            <input type="color" id="secondary_color" value="#0d47a1">
+                        </div>
+                        <div class="form-group">
+                            <label>Accent Color</label>
+                            <input type="color" id="accent_color" value="#34a853">
+                        </div>
+                        <div class="form-group">
+                            <label>Background Color</label>
+                            <input type="color" id="background_color" value="#ffffff">
+                        </div>
+                    </div>
+
+                    <h3>Chat Bubbles</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>User Bubble Color</label>
+                            <input type="color" id="user_message_bg" value="#1a73e8">
+                        </div>
+                        <div class="form-group">
+                            <label>User Text Color</label>
+                            <input type="color" id="user_message_text" value="#ffffff">
+                        </div>
+                        <div class="form-group">
+                            <label>Bot Bubble Color</label>
+                            <input type="color" id="bot_message_bg" value="#ffffff">
+                        </div>
+                        <div class="form-group">
+                            <label>Bot Text Color</label>
+                            <input type="color" id="bot_message_text" value="#202124">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MESSAGES -->
+                <div class="card">
+                    <h2>Messages</h2>
+                    <div class="form-group">
+                        <label>Welcome Message</label>
+                        <textarea id="welcome_text" rows="2">Hello! How can I help you today?</textarea>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Response Time Text</label>
+                            <input type="text" id="response_time_text" value="We reply instantly">
+                        </div>
+                        <div class="form-group">
+                            <label>Placeholder Text</label>
+                            <input type="text" id="placeholder_text" value="Type your message...">
+                        </div>
+                        <div class="form-group">
+                            <label>Start Button Text</label>
+                            <input type="text" id="start_button_text" value="Start Conversation">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LIMITS -->
+                <div class="card">
+                    <h2>Usage Limits & Access</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Monthly Message Limit</label>
+                            <input type="number" id="monthly_message_limit" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Disable Bot?</label>
+                            <select id="is_active">
+                                <option value="true">Active</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Limit Reached Message</label>
+                        <input type="text" id="limit_reached_message"
+                            value="Monthly limit reached. Please contact support.">
+                    </div>
+                </div>
+
+                <!-- HEADER & FOOTER -->
+                <div class="card">
+                    <h2>Header & Footer</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="header_show_logo" checked> Show Header Logo
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="header_show_status" checked> Show Online Status
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="footer_show" checked> Show Footer
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Footer Text</label>
+                            <input type="text" id="footer_text" value="Powered by AI">
+                        </div>
+                        <div class="form-group">
+                            <label>Footer Link</label>
+                            <input type="url" id="footer_link" value="https://example.com">
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- OUTPUT SECTION -->
+        <div class="sticky-sidebar">
+            <div class="card" style="height: 100%; display: flex; flex-direction: column;">
+                <h2>Generated SQL</h2>
+                <div style="margin-bottom: 8px; font-size: 13px; color: #666;">
+                    Copy this logic and run it in your Supabase SQL Editor.
+                </div>
+                <button class="btn" onclick="copyToClipboard()" style="margin-bottom: 12px;">📋 Copy SQL</button>
+                <textarea id="sql-output" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getValue(id) {
+            const el = document.getElementById(id);
+            if (el.type === 'checkbox') return el.checked;
+            return el.value;
+        }
+
+        function escapeSql(str) {
+            return str.replace(/'/g, "''");
+        }
+
+        function generateSQL() {
+            const botId = getValue('bot_id') || 'new-bot-id';
+
+            const sql = `-- Create/Update Bot: ${getValue('name')}
+INSERT INTO public.bot_configurations (
+    bot_id,
+    name,
+    company_name,
+    webhook_url,
+    webhook_route,
+    
+    logo_url,
+    favicon_url,
+    
+    primary_color,
+    secondary_color,
+    accent_color,
+    background_color,
+    
+    user_message_bg,
+    user_message_text,
+    bot_message_bg,
+    bot_message_text,
+    
+    welcome_text,
+    response_time_text,
+    placeholder_text,
+    start_button_text,
+    
+    monthly_message_limit,
+    limit_reached_message,
+    enable_message_limit,
+    is_active,
+    
+    header_show_logo,
+    header_show_status,
+    footer_show,
+    footer_text,
+    footer_link,
+    
+    updated_at
+) VALUES (
+    '${escapeSql(botId)}',
+    '${escapeSql(getValue('name'))}',
+    '${escapeSql(getValue('company_name'))}',
+    '${escapeSql(getValue('webhook_url'))}',
+    'general',
+    
+    '${escapeSql(getValue('logo_url'))}',
+    '${escapeSql(getValue('favicon_url'))}',
+    
+    '${getValue('primary_color')}',
+    '${getValue('secondary_color')}',
+    '${getValue('accent_color')}',
+    '${getValue('background_color')}',
+    
+    '${getValue('user_message_bg')}',
+    '${getValue('user_message_text')}',
+    '${getValue('bot_message_bg')}',
+    '${getValue('bot_message_text')}',
+    
+    '${escapeSql(getValue('welcome_text'))}',
+    '${escapeSql(getValue('response_time_text'))}',
+    '${escapeSql(getValue('placeholder_text'))}',
+    '${escapeSql(getValue('start_button_text'))}',
+    
+    ${getValue('monthly_message_limit')},
+    '${escapeSql(getValue('limit_reached_message'))}',
+    true,
+    ${getValue('is_active')},
+    
+    ${getValue('header_show_logo')},
+    ${getValue('header_show_status')},
+    ${getValue('footer_show')},
+    '${escapeSql(getValue('footer_text'))}',
+    '${escapeSql(getValue('footer_link'))}',
+    
+    NOW()
+)
+ON CONFLICT (bot_id) DO UPDATE SET
+    name = EXCLUDED.name,
+    company_name = EXCLUDED.company_name,
+    webhook_url = EXCLUDED.webhook_url,
+    logo_url = EXCLUDED.logo_url,
+    favicon_url = EXCLUDED.favicon_url,
+    primary_color = EXCLUDED.primary_color,
+    secondary_color = EXCLUDED.secondary_color,
+    accent_color = EXCLUDED.accent_color,
+    background_color = EXCLUDED.background_color,
+    user_message_bg = EXCLUDED.user_message_bg,
+    user_message_text = EXCLUDED.user_message_text,
+    bot_message_bg = EXCLUDED.bot_message_bg,
+    bot_message_text = EXCLUDED.bot_message_text,
+    welcome_text = EXCLUDED.welcome_text,
+    response_time_text = EXCLUDED.response_time_text,
+    placeholder_text = EXCLUDED.placeholder_text,
+    start_button_text = EXCLUDED.start_button_text,
+    monthly_message_limit = EXCLUDED.monthly_message_limit,
+    limit_reached_message = EXCLUDED.limit_reached_message,
+    is_active = EXCLUDED.is_active,
+    header_show_logo = EXCLUDED.header_show_logo,
+    header_show_status = EXCLUDED.header_show_status,
+    footer_show = EXCLUDED.footer_show,
+    footer_text = EXCLUDED.footer_text,
+    footer_link = EXCLUDED.footer_link,
+    updated_at = NOW();`;
+
+            document.getElementById('sql-output').value = sql;
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("sql-output");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+
+            const btn = document.querySelector('.btn');
+            const originalText = btn.innerText;
+            btn.innerText = "✅ Copied!";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+
+        // Initialize
+        generateSQL();
+    </script>
+
+</body>
+
+</html>
